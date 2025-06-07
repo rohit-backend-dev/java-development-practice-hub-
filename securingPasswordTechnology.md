@@ -70,12 +70,13 @@ IllegalArgumentException: No PasswordEncoder mapped for id "null"
 
 ### For Demos:
 
+```java
 UserDetails user = User.withDefaultPasswordEncoder()
   .username("user")
   .password("password")
   .roles("USER")
   .build(); // -> Not secure for production – exposes password in memory and code.
-
+```
 ---
 
 ## 💡 Using Spring Boot CLI to Encode a Password
@@ -94,17 +95,21 @@ This is the easiest way to generate production-grade hashes.
 ## 🔧 Custom PasswordEncoder Configuration
 
 You can define your own bean:
+
+```java
 @Bean
 public PasswordEncoder passwordEncoder() {
     return PasswordEncoderFactories.createDelegatingPasswordEncoder();
 }
-
+```
 Or revert for legacy systems:
+
+```java
 @Bean
 public static NoOpPasswordEncoder passwordEncoder() {
     return NoOpPasswordEncoder.getInstance();
 } // NoOpPasswordEncoder.getInstance() -> Stores plain text — NEVER use in production!
-
+```
 
 ---
 
@@ -120,11 +125,13 @@ String hash = encoder.encode("myPassword");
 encoder.matches("myPassword", hash);
 
 **🛠️ Spring Boot Bean for BCryptPasswordEncoder** :
+
+```java
 @Bean
 public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
 }
-
+```
 
 **📌 Features:**
 1.Adjustable strength (log rounds), default is 10.
@@ -233,7 +240,8 @@ Spring can integrate with [HaveIBeenPwned](https://haveibeenpwned.com) to check 
 
 ### Configuration:
 
-   **// Main security filter chain configuration
+```java
+   // Main security filter chain configuration
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -246,49 +254,60 @@ Spring can integrate with [HaveIBeenPwned](https://haveibeenpwned.com) to check 
                 .failureHandler(new CompromisedPasswordAuthenticationFailureHandler())
             );
         return http.build();
-    }**
+    }
+
+    ```
 
     
 
-  **// Bean to check if a password is compromised using HaveIBeenPwned API
+```java
+  // Bean to check if a password is compromised using HaveIBeenPwned API
     @Bean
     public CompromisedPasswordChecker compromisedPasswordChecker() {
         return new HaveIBeenPwnedRestApiPasswordChecker();
-    }**
+    }
+```
 
 ### Handling Failure:
 
 
+```java
 .formLogin(login -> login
     .failureHandler(new CompromisedPasswordAuthenticationFailureHandler())
 )
-
+```
 
 ### Custom Handler:
 
  **Custom AuthenticationFailureHandler to detect if login failed due to a compromised password.**
 
- 
-   **static class CompromisedPasswordAuthenticationFailureHandler implements AuthenticationFailureHandler {
-   // Default failure handler to redirect users to /login?error for normal authentication failures
-        private final SimpleUrlAuthenticationFailureHandler defaultFailureHandler =
-                new SimpleUrlAuthenticationFailureHandler("/login?error");
+```java
+static class CompromisedPasswordAuthenticationFailureHandler implements AuthenticationFailureHandler {
+
+    // Default failure handler to redirect users to /login?error for normal authentication failures
+    private final SimpleUrlAuthenticationFailureHandler defaultFailureHandler =
+            new SimpleUrlAuthenticationFailureHandler("/login?error");
+
     // Redirect strategy used to manually redirect users in case of compromised passwords
     private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
-        @Override
-        public void onAuthenticationFailure(HttpServletRequest request,
-                                            HttpServletResponse response,
-                                            org.springframework.security.core.AuthenticationException exception)
-                throws IOException, ServletException {
-          // Check if the authentication failed due to a compromised password
-            if (exception instanceof CompromisedPasswordException) {
-                redirectStrategy.sendRedirect(request, response, "/reset-password");
-                return;
-            }
-      // For all other types of authentication failures, fall back to default behavior
-        defaultFailureHandler.onAuthenticationFailure(request, response, exception);
+
+    @Override
+    public void onAuthenticationFailure(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        org.springframework.security.core.AuthenticationException exception)
+            throws IOException, ServletException {
+
+        // Check if the authentication failed due to a compromised password
+        if (exception instanceof CompromisedPasswordException) {
+            redirectStrategy.sendRedirect(request, response, "/reset-password");
+            return;
         }
-    }**
+
+        // For all other types of authentication failures, fall back to default behavior
+        defaultFailureHandler.onAuthenticationFailure(request, response, exception);
+    }
+}
+```
 
 ---
 
