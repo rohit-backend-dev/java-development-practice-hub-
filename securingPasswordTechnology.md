@@ -233,11 +233,28 @@ Spring can integrate with [HaveIBeenPwned](https://haveibeenpwned.com) to check 
 
 ### Configuration:
 
-@Bean
-public CompromisedPasswordChecker compromisedPasswordChecker() {
-    return new HaveIBeenPwnedRestApiPasswordChecker();
-}
+   **// Main security filter chain configuration
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                // Require authentication for all requests
+                .anyRequest().authenticated()
+            )
+            .formLogin(login -> login
+                // Use custom failure handler during login
+                .failureHandler(new CompromisedPasswordAuthenticationFailureHandler())
+            );
+        return http.build();
+    }**
 
+    
+
+  **// Bean to check if a password is compromised using HaveIBeenPwned API
+    @Bean
+    public CompromisedPasswordChecker compromisedPasswordChecker() {
+        return new HaveIBeenPwnedRestApiPasswordChecker();
+    }**
 
 ### Handling Failure:
 
@@ -249,16 +266,29 @@ public CompromisedPasswordChecker compromisedPasswordChecker() {
 
 ### Custom Handler:
 
-static class CompromisedPasswordAuthenticationFailureHandler implements AuthenticationFailureHandler {
-    @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
-        AuthenticationException exception) throws IOException, ServletException {
-        if (exception instanceof CompromisedPasswordException) {
-            response.sendRedirect("/reset-password");
-        }
-    }
-}
+ **Custom AuthenticationFailureHandler to detect if login failed due to a compromised password.**
 
+ 
+   **static class CompromisedPasswordAuthenticationFailureHandler implements AuthenticationFailureHandler {
+   // Default failure handler to redirect users to /login?error for normal authentication failures
+        private final SimpleUrlAuthenticationFailureHandler defaultFailureHandler =
+                new SimpleUrlAuthenticationFailureHandler("/login?error");
+    // Redirect strategy used to manually redirect users in case of compromised passwords
+    private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+        @Override
+        public void onAuthenticationFailure(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            org.springframework.security.core.AuthenticationException exception)
+                throws IOException, ServletException {
+          // Check if the authentication failed due to a compromised password
+            if (exception instanceof CompromisedPasswordException) {
+                redirectStrategy.sendRedirect(request, response, "/reset-password");
+                return;
+            }
+      // For all other types of authentication failures, fall back to default behavior
+        defaultFailureHandler.onAuthenticationFailure(request, response, exception);
+        }
+    }**
 
 ---
 
