@@ -256,11 +256,7 @@ Spring can integrate with [HaveIBeenPwned](https://haveibeenpwned.com) to check 
         return http.build();
     }
 
-    ```
 
-    
-
-```java
   // Bean to check if a password is compromised using HaveIBeenPwned API
     @Bean
     public CompromisedPasswordChecker compromisedPasswordChecker() {
