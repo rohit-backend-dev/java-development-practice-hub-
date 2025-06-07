@@ -1,0 +1,66 @@
+🔹 What is In-Memory Authentication?
+It means storing user credentials (username/password) and roles directly inside the application configuration, without connecting to any external system like a database.
+
+🔹 When to Use?
+For development, testing, or interview demos.
+
+When you don’t need dynamic user management.
+
+
+
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        UserDetails user1 = User
+                .withUsername("raju")
+                .password("{noop}1234") // {noop} means plain text password (not encrypted)
+                .roles("USER")
+                .build();
+
+        UserDetails admin = User
+                .withUsername("admin")
+                .password("{noop}admin123")
+                .roles("ADMIN")
+                .build();
+
+        return new InMemoryUserDetailsManager(user1, admin);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().authenticated()
+            )
+            .httpBasic(Customizer.withDefaults()); // Enables Basic Auth
+        return http.build();
+    }
+}
+
+
+
+🔐 Password Encoding Notes:
+{noop} means No encryption – just plain text (only for testing!).
+
+For production, use {bcrypt} or a PasswordEncoder bean.
+
+
+
+
+
+@Bean
+public UserDetailsService users() {
+	UserDetails user = User.builder()
+		.username("user")
+		.password("{bcrypt}$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW")
+		.roles("USER")
+		.build();
+	UserDetails admin = User.builder()
+		.username("admin")
+		.password("{bcrypt}$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW")
+		.roles("USER", "ADMIN")
+		.build();
+	return new InMemoryUserDetailsManager(user, admin);
