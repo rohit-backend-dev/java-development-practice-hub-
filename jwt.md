@@ -130,6 +130,7 @@ dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
 **This section walks you through setting up JWT authentication in a Spring Boot project step-by-step.**
 
 ---
+```
 ## project structure
 practicefile/
 ├── src/
@@ -151,7 +152,7 @@ practicefile/
 │           └── ...
 ├── pom.xml                                               # Maven dependencies
 └── ...
-
+```
 ---
 
 ## 🌐 API Endpoints
