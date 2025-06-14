@@ -1,22 +1,23 @@
 # Blue-Green Deployment Guide
 
----
-
 ## 1. What is Blue-Green Deployment?
 
-**Blue-Green Deployment** is a release management strategy designed to minimize downtime and risk by maintaining two identical production environments — **Blue** and **Green**. At any given time, only one environment (commonly Blue) actively serves live traffic, while the other (Green) stands by, ready to take over with the new version.
+**Blue-Green Deployment** is a release management strategy designed to minimize downtime and risk by maintaining two identical production environments — **Blue** and **Green**.
+
+At any given time, only one environment (commonly Blue) serves live traffic, while the other (Green) stands by, ready to take over with the new version.
 
 **How it works:**
-- Deploy and test the new version in the idle (Green) environment.
-- Once ready, redirect all user traffic to Green.
-- The previous environment (Blue) becomes idle, providing an instant rollback path if needed.
+
+1. Deploy and test the new version in the idle (**Green**) environment.
+2. Once ready, redirect all user traffic to **Green**.
+3. The previous environment (**Blue**) becomes idle, providing an instant rollback path if needed.
 
 ---
 
 ## 2. Why Use Blue-Green Deployment?
 
 - **Zero Downtime:** Users experience seamless upgrades.
-- **Instant Rollback:** Quickly revert to the last stable version.
+- **Instant Rollback:** Instantly revert to the last stable version if needed.
 - **Production-like Testing:** Validate changes in an environment identical to production before exposing them to users.
 - **Risk Mitigation:** Only one environment is exposed to live users at a time, reducing blast radius in case of issues.
 - **Simplified Release Management:** Clear separation of "current" and "next" versions.
@@ -36,58 +37,36 @@
 
 ## 4. Blue-Green Deployment: Step-by-Step Workflow
 
-### Step 1: Blue is Live
-- Blue serves all users.
-- Green is idle or non-existent.
+1. **Blue is Live**
+   - Blue serves all users.
+   - Green is idle or non-existent.
 
-### Step 2: Deploy to Green
-- Clone Blue to create Green (matching infra, configs, data).
-- Deploy new application version to Green.
-- Run comprehensive tests (integration, smoke, performance).
+2. **Deploy to Green**
+   - Clone Blue to create Green (matching infra, configs, data).
+   - Deploy new application version to Green.
+   - Run comprehensive tests (integration, smoke, performance).
 
-### Step 3: Switch Traffic
-- Update DNS, router, or load balancer to direct all traffic to Green.
-- Green is now live; Blue moves to standby state.
+3. **Switch Traffic**
+   - Update DNS, router, or load balancer to direct all traffic to Green.
+   - Green is now live; Blue moves to standby state.
 
-### Step 4: Monitor and Rollback
-- Deeply monitor for errors, performance issues, and user feedback.
-- Instantly roll back to Blue if necessary by redirecting traffic.
+4. **Monitor and Rollback**
+   - Deeply monitor for errors, performance issues, and user feedback.
+   - Instantly roll back to Blue if necessary by redirecting traffic.
 
-### Step 5: Clean Up
-- Decommission or repurpose Blue after confirming Green is stable.
-- Optionally, keep Blue as a backup for a defined period.
+5. **Clean Up**
+   - Decommission or repurpose Blue after confirming Green is stable.
+   - Optionally, keep Blue as a backup for a defined period.
 
 ---
 
 ## 5. Visualizing Blue-Green Workflow
 
-### Before Deployment
+> **Tip:**  
+> Use diagrams to communicate deployment flow clearly to your team.
 
-```mermaid
-graph LR
-    User --> LB[Load Balancer]
-    LB --> Blue[Blue (Live)]
-    LB -.-> Green[Green (Idle)]
-```
-
-### After Deployment
-
-```mermaid
-graph LR
-    User --> LB[Load Balancer] --> Green[Green (Live)]
-    Blue[Blue (Idle)]
-```
-
-### Maintenance Window Scenario
-
-```mermaid
-graph LR
-    User --> LB[Load Balancer]
-    LB --> Maint[Maintenance Page]
-    Maint --> Green[Green (Live)]
-    Blue -.-> Maint
-```
 ### Sequence Diagram
+
 ```mermaid
 sequenceDiagram
     participant User
@@ -124,8 +103,9 @@ sequenceDiagram
 
 ### Handling Application State
 
-- **Sessions:** Store sessions in external, shared stores (e.g., Redis, Memcached). Never store sessions in application memory.
-- **Schema Changes:** Design migrations to be non-breaking. When not possible, use a maintenance window with a static page for users.
+- **Sessions:** Store sessions in external, shared stores (e.g., Redis, Memcached).  
+  Never store sessions in application memory.
+- **Schema Changes:** Design migrations to be non-breaking. If not possible, use a maintenance window with a static page for users.
 - **Cache:** Ensure caches are externalized or can be safely rebuilt across environments.
 
 ---
@@ -171,7 +151,7 @@ Assume your app is `demo-time`:
    ```shell
    cf map-route Green example.com -n demo-time
    ```
-   Both Blue and Green now serve the main route until you unmap Blue.
+   > At this point, both Blue and Green serve the main route until you unmap Blue.
 
 4. **Unmap Blue**
    ```shell
@@ -184,7 +164,8 @@ Assume your app is `demo-time`:
    cf delete-route example.com --hostname demo-time-temp
    ```
 
-**Tip:** Automate this process with the [cf-blue-green-deploy plugin](https://github.com/bluemixgaragelondon/cf-blue-green-deploy).
+> **Automate:**  
+> Use the [cf-blue-green-deploy plugin](https://github.com/bluemixgaragelondon/cf-blue-green-deploy) to automate this process.
 
 ---
 
@@ -208,29 +189,35 @@ Assume your app is `demo-time`:
 | Highly coupled microservices                | Partial switches can cause incompatibilities                       |
 | Large persistent data volumes               | Data synchronization is difficult and risky                        |
 
-**Alternatives:** Consider rolling, canary, or shadow deployments for these scenarios.
+> **Alternatives:**  
+> Consider rolling, canary, or shadow deployments for these scenarios.
 
 ---
 
 ## 12. Popular Tools & Platforms
 
-- **Cloud Providers:** AWS Elastic Beanstalk, Azure App Service, Google App Engine
-- **Containers/Orchestration:** Kubernetes (using Services and Deployments), Docker Swarm
-- **CI/CD:** Jenkins, GitHub Actions, GitLab CI/CD, ArgoCD, Spinnaker
-- **Load Balancers:** NGINX, HAProxy, AWS ALB/ELB
-- **Automation Plugins:** cf-blue-green-deploy (Cloud Foundry), [Argo Rollouts](https://argo-rollouts.readthedocs.io/en/stable/) (K8s)
+- **Cloud Providers:**  
+  AWS Elastic Beanstalk, Azure App Service, Google App Engine
+- **Containers/Orchestration:**  
+  Kubernetes (using Services and Deployments), Docker Swarm
+- **CI/CD:**  
+  Jenkins, GitHub Actions, GitLab CI/CD, ArgoCD, Spinnaker
+- **Load Balancers:**  
+  NGINX, HAProxy, AWS ALB/ELB
+- **Automation Plugins:**  
+  cf-blue-green-deploy (Cloud Foundry), [Argo Rollouts](https://argo-rollouts.readthedocs.io/en/stable/) (K8s)
 
 ---
 
 ## 13. Blue-Green Deployment Cheat Sheet
 
-| Step             | Action                                                      |
-|------------------|------------------------------------------------------------|
-| Deploy Green     | Provision, deploy, and thoroughly test new version         |
-| Switch Traffic   | Route all users to Green via DNS/LB/router                 |
-| Monitor          | Watch logs, metrics, and user feedback after switch        |
-| Rollback         | Instantly switch back to Blue if issues are found          |
-| Clean up         | Update or remove Blue, prepare for next release cycle      |
+| Step           | Action                                                    |
+|----------------|-----------------------------------------------------------|
+| **Deploy Green**   | Provision, deploy, and thoroughly test new version      |
+| **Switch Traffic** | Route all users to Green via DNS/LB/router             |
+| **Monitor**        | Watch logs, metrics, and user feedback after switch    |
+| **Rollback**       | Instantly switch back to Blue if issues are found      |
+| **Clean up**       | Update or remove Blue, prepare for next release cycle  |
 
 ---
 
@@ -244,3 +231,5 @@ Assume your app is `demo-time`:
 - [Argo Rollouts (Kubernetes)](https://argo-rollouts.readthedocs.io/en/stable/)
 
 ---
+
+> <sub>_This document uses [GitHub Flavored Markdown](https://docs.github.com/get-started/writing-on-github/working-with-advanced-formatting/about-writing-and-formatting-on-github) for clear structure, code formatting, references, and best-practice writing._</sub>
