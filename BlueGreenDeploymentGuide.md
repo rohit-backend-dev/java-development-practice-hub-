@@ -65,8 +65,9 @@
 
 ```mermaid
 graph LR
-    User --> LB[Load Balancer] --> Blue[Blue (Live)]
-    Green[Green (Idle)]
+    User --> LB[Load Balancer]
+    LB --> Blue[Blue (Live)]
+    LB -.-> Green[Green (Idle)]
 ```
 
 ### After Deployment
@@ -81,13 +82,12 @@ graph LR
 
 ```mermaid
 graph LR
-    User --> LB[Load Balancer] --> Maint[Maintenance Page]
+    User --> LB[Load Balancer]
+    LB --> Maint[Maintenance Page]
     Maint --> Green[Green (Live)]
     Blue -.-> Maint
 ```
-
 ### Sequence Diagram
-
 ```mermaid
 sequenceDiagram
     participant User
