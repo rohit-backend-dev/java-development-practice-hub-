@@ -25,18 +25,6 @@ This hub contains curated documentation for:
 
 No code setup or build is required, as this repository is documentation-focused.
 
-## Documentation
-
-- `docs/`: Main directory for all documentation files.
-- `spring/`, `hibernate/`, `security/`, etc.: Subdirectories for framework-specific or topic-specific documentation.
-- Example topics include:
-  - Spring Boot project structure
-  - Creating REST APIs
-  - Connecting to databases
-  - Writing unit and integration tests
-  - Securing Java applications
-  - Using Docker with Java
-
 ## Usage
 
 - Use this repository as a reference while working on backend Java projects.
