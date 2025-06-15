@@ -1,7 +1,6 @@
 # Blue-Green Deployment Guide
 
 ## 1. What is Blue-Green Deployment?
-
 **Blue-Green Deployment** is a release management strategy designed to minimize downtime and risk by maintaining two identical production environments — **Blue** and **Green**.
 
 At any given time, only one environment (commonly Blue) serves live traffic, while the other (Green) stands by, ready to take over with the new version.
