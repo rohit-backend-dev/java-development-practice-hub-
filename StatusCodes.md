@@ -5,12 +5,13 @@ HTTP status codes are issued by a server in response to a client's request made 
 ---
 ## HTTP Status Code Range
 
+```
 Informational responses (100 – 199)
 Successful responses (200 – 299)
 Redirection messages (300 – 399)
 Client error responses (400 – 499)
 Server error responses (500 – 599)
-
+```
 ## 🏁 Quick Reference Table
 
 | Code | Name                    | When to Use                                               | Spring Boot Usage Example                        |
