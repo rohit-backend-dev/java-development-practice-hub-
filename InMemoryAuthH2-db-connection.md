@@ -23,6 +23,7 @@ A basic Spring Boot project demonstrating:
 ---
 
 ## 🗂 Project Structure
+```
 src/
 ├── main/
 │ ├── java/com/practice/practicefile/
@@ -30,7 +31,7 @@ src/
 │ │ └── GreetingsController.java
 │ └── resources/
 │ └── application.properties
-
+```
 
 ---
 
