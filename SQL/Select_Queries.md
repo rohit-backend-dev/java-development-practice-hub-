@@ -164,12 +164,47 @@ Returns customers NOT from 'UP' or 'MH'.
 
 ### b. LIKE (Pattern Matching)
 
+**Starts With Pattern**
+
 ```sql
 SELECT * FROM customers
 WHERE first_name LIKE 'A%';
 ```
+Explanation:  
+Finds customers whose first name starts with "A".
+
+- The `%` symbol matches any sequence of characters (including zero characters) after "A".
+- Examples matched: `"A"`, `"Anjali"`, `"Amit"`, `"Arjun"`.
+
+---
+
+- **Exact Character Count Pattern**
+
+```sql
+SELECT * FROM customers
+WHERE first_name LIKE 'A_';
+```
 **Explanation:**  
-Finds customers whose first name starts with 'A'.
+Finds customers whose first name is exactly two characters long and starts with "A".
+
+- The `_` symbol matches exactly one character.
+- Examples matched: `"Al"`, `"An"`, `"Aj"`.
+- Examples **not** matched: `"Amit"`, `"A"`.
+
+
+- **Ends with a character:**
+  ```sql
+  SELECT * FROM customers WHERE first_name LIKE '%a';
+  ```
+  Finds names ending with "a" (e.g., `"Riya"`, `"Sneha"`).
+
+ - **Contains a substring:**
+  ```sql
+  SELECT * FROM customers WHERE first_name LIKE '%it%';
+  ```
+  Finds names containing "it" anywhere (e.g., `"Amit"`, `"Ritu"`).
+
+---
 
 ---
 
