@@ -15,6 +15,7 @@ flowchart LR
     style Queue fill:#dff9fb,stroke:#333,stroke-width:2px
     style Consumer fill:#6ab04c,stroke:#333,stroke-width:2px
 ```
+
 ---
 
 ## Why Do We Need Message Queues?
@@ -134,11 +135,11 @@ flowchart LR
 **Quick Start with Docker:**
 
 ```bash
-RabbitMQ 3.x
+# RabbitMQ 3.x
 docker run -d --hostname my-rabbit --name some-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 ```
 ```bash
- latest RabbitMQ 4.x
+# latest RabbitMQ 4.x
 docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management
 ```
 
@@ -165,7 +166,44 @@ implementation 'com.rabbitmq:amqp-client:5.21.0'
 
 ---
 
-## 3. Java Producer Example
+## 3. application.properties / application.yml
+
+Below are Spring Boot application configuration examples for integrating **RabbitMQ**.
+
+### RabbitMQ (`application.properties`)
+```properties
+spring.rabbitmq.host=localhost
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest
+spring.rabbitmq.virtual-host=/
+spring.rabbitmq.listener.simple.acknowledge-mode=auto
+spring.rabbitmq.template.exchange=my-exchange
+spring.rabbitmq.template.routing-key=my-routing-key
+spring.rabbitmq.template.default-receive-queue=my-queue
+```
+
+### RabbitMQ (`application.yml`)
+```yaml
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: auto
+    template:
+      exchange: my-exchange
+      routing-key: my-routing-key
+      default-receive-queue: my-queue
+```
+
+---
+
+## 4. Java Producer Example
 
 **Send a message to RabbitMQ:**
 
@@ -173,6 +211,7 @@ implementation 'com.rabbitmq:amqp-client:5.21.0'
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
 
 public class Producer {
     private final static String QUEUE_NAME = "task_queue";
@@ -184,7 +223,7 @@ public class Producer {
             boolean durable = true;
             channel.queueDeclare(QUEUE_NAME, durable, false, false, null);
             String message = "Hello RabbitMQ from Java!";
-            channel.basicPublish("", QUEUE_NAME, null, message.getBytes());
+            channel.basicPublish("", QUEUE_NAME, MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
             System.out.println(" [x] Sent '" + message + "'");
         }
     }
@@ -197,7 +236,7 @@ public class Producer {
 
 ---
 
-## 4. Java Consumer Example
+## 5. Java Consumer Example
 
 **Receive messages from RabbitMQ:**
 
@@ -231,7 +270,7 @@ public class Consumer {
 
 ---
 
-## 5. Hands-on Activities: Try It Yourself
+## 6. Hands-on Activities: Try It Yourself
 
 ```mermaid
 flowchart TD
@@ -273,7 +312,7 @@ Producer:
 
 ---
 
-## 6. Best Practices
+## 7. Best Practices
 
 - Use **durable queues** and **persistent messages** for reliability.
 - Handle **acknowledgments** and errors explicitly.
@@ -282,6 +321,128 @@ Producer:
 - **Monitor** with the RabbitMQ management plugin.
 
 ---
+
+# Spring Boot RabbitMQ Java Configuration: Queue, Exchange, Binding, and Listener
+
+This guide shows how to set up RabbitMQ integration in a Spring Boot application using **Java configuration** (no XML!) and best practices for JSON message handling and simple message listening.
+
+---
+
+## 1. Queue, Exchange, and Binding Beans
+
+Define beans for queue, exchange, and binding.  
+- Use `DirectExchange` for direct routing.  
+- Change to `TopicExchange` or `FanoutExchange` for other patterns as needed.
+
+```java
+import org.springframework.amqp.core.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class RabbitMQConfig {
+
+    public static final String QUEUE = "my-queue";
+    public static final String EXCHANGE = "my-exchange";
+    public static final String ROUTING_KEY = "my-routing-key";
+
+    @Bean
+    public Queue queue() {
+        return new Queue(QUEUE, true); // durable queue
+    }
+
+    @Bean
+    public DirectExchange exchange() {
+        return new DirectExchange(EXCHANGE);
+    }
+
+    @Bean
+    public Binding binding(Queue queue, DirectExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+    }
+}
+```
+> ℹ️ **Tip:**  
+> - For a topic exchange: `new TopicExchange(EXCHANGE)`
+> - For a fanout exchange: `new FanoutExchange(EXCHANGE)`
+
+---
+
+## 2. Message Converter (Optional but Recommended)
+
+To send/receive JSON instead of raw bytes, use a Jackson-based converter.
+
+```java
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.context.annotation.Bean;
+
+@Bean
+public MessageConverter jsonMessageConverter() {
+    return new Jackson2JsonMessageConverter();
+}
+
+@Bean
+public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+    RabbitTemplate template = new RabbitTemplate(connectionFactory);
+    template.setMessageConverter(jsonMessageConverter());
+    return template;
+}
+```
+- This enables easy serialization/deserialization of POJOs as JSON.
+
+---
+
+## 3. RabbitMQ Listener (Consumer) with Spring
+
+Use `@RabbitListener` to make a simple message consumer.
+
+```java
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MyRabbitListener {
+
+    @RabbitListener(queues = RabbitMQConfig.QUEUE)
+    public void receiveMessage(String message) {
+        System.out.println(" [x] Received: " + message);
+    }
+}
+```
+- Spring automatically creates a listener container for you.
+- Message payload can be a `String`, POJO, or byte[] (depending on your converter).
+
+---
+
+## 4. Example application.properties for RabbitMQ
+
+```properties
+spring.rabbitmq.host=localhost
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest
+```
+
+---
+
+## 5. How it works (Flow Diagram)
+
+```mermaid
+flowchart LR
+    ProducerApp[Spring Boot Producer] -- send (RabbitTemplate) --> EX[Exchange]
+    EX -- routes to --> Q[Queue]
+    Q -- delivers --> Listener[Spring Boot @RabbitListener]
+    style ProducerApp fill:#f9ca24,stroke:#333,stroke-width:2px
+    style EX fill:#dff9fb,stroke:#333,stroke-width:2px
+    style Q fill:#dff9fb,stroke:#333,stroke-width:2px
+    style Listener fill:#6ab04c,stroke:#333,stroke-width:2px
+```
+
+---
+
 
 # Hands-on: Apache Kafka Java Implementation
 
@@ -319,8 +480,10 @@ services:
     ports:
       - "9092:9092"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: localhost
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
 ```
 
 Start with:
@@ -348,7 +511,39 @@ implementation 'org.apache.kafka:kafka-clients:3.7.0'
 
 ---
 
-## 3. Kafka Java Producer Example
+## 3. application.properties / application.yml
+
+Below are Spring Boot application configuration examples for integrating **Kafka**.
+
+### Kafka (`application.properties`)
+```properties
+spring.kafka.bootstrap-servers=localhost:9092
+spring.kafka.consumer.group-id=my-group
+spring.kafka.consumer.auto-offset-reset=earliest
+spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.value-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.StringSerializer
+```
+
+### Kafka (`application.yml`)
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: my-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+```
+
+---
+
+## 4. Kafka Java Producer Example
 
 ```java
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -376,13 +571,13 @@ public class SimpleKafkaProducer {
 - Make sure Kafka is running.
 - Create the topic:  
   ```bash
-  docker exec -it <kafka-container-name> kafka-topics.sh --create --topic test-topic --bootstrap-server localhost:9092
+  docker exec -it <kafka-container-name> kafka-topics.sh --create --topic test-topic --bootstrap-server kafka:9092
   ```
 - Run the producer class.
 
 ---
 
-## 4. Kafka Java Consumer Example
+## 5. Kafka Java Consumer Example
 
 ```java
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -438,7 +633,7 @@ offset = 4, key = key-4, value = Hello Kafka message 4
 
 ---
 
-## 5. Kafka Hands-on Activities
+## 6. Kafka Hands-on Activities
 
 ```mermaid
 flowchart TD
@@ -464,6 +659,18 @@ flowchart TD
    Create topics with more partitions, test scaling.
 
 ---
+
+## 7. Best Practices for Kafka
+
+- Set `acks=all` in producer config for strongest durability.
+- Use **replication** for fault-tolerance (production).
+- Monitor with **Kafka Manager**, **Prometheus**, or **JMX**.
+- Tune partitions and consumers for scaling.
+- Secure Kafka using SASL/SSL in production.
+- Use compacted topics for event-sourcing patterns.
+
+---
+
 
 ## FAQ
 
