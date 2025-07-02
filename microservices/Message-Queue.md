@@ -137,6 +137,10 @@ flowchart LR
 docker run -d --hostname my-rabbit --name some-rabbit \
   -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 ```
+```bash
+ latest RabbitMQ 4.x
+docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management
+```
 
 - Management UI: [http://localhost:15672](http://localhost:15672) (login: `guest` / `guest`)
 - AMQP port for Java: `5672`
