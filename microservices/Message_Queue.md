@@ -367,7 +367,7 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.name}")
     private String queueName;
 
-    @Value("${rabbitmq.routing-key}")
+    @Value("${rabbitmq.routing.key}")
     private String routingKey;
 
     @Bean
@@ -496,22 +496,29 @@ flowchart LR
 **Run Kafka + Zookeeper with Docker Compose:**
 
 ```yaml
-# docker-compose.yml
-version: '2'
+# docker-compose.yml 
+version: '3.8'
 services:
   zookeeper:
-    image: wurstmeister/zookeeper:3.4.6
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+
   kafka:
-    image: wurstmeister/kafka:2.13-2.8.0
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on:
+      - zookeeper
     ports:
       - "9092:9092"
     environment:
-     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
 ```
 
 Start with:
@@ -584,12 +591,15 @@ public class SimpleKafkaProducer {
         props.put("bootstrap.servers", "localhost:9092");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("acks", "all");
 
         KafkaProducer<String, String> producer = new KafkaProducer<>(props);
 
         for (int i = 0; i < 5; i++) {
             producer.send(new ProducerRecord<>("test-topic", "key-" + i, "Hello Kafka message " + i));
         }
+
+        producer.flush(); // Push all messages immediately
         producer.close();
         System.out.println("Messages sent to Kafka.");
     }
@@ -624,6 +634,7 @@ public class SimpleKafkaConsumer {
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList("test-topic"));
+        Runtime.getRuntime().addShutdownHook(new Thread(consumer::close));
 
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(java.time.Duration.ofMillis(100));
