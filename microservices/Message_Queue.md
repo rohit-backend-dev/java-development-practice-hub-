@@ -201,7 +201,24 @@ spring:
       routing-key: my-routing-key
       default-receive-queue: my-queue
 ```
+## ( OR )
 
+```yaml
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  rabbitmq:
+    exchange:
+      name: my-exchange
+    queue:
+      name: my-name
+    routing:
+      key: my-routing-key
+```
 ---
 
 ## 4. Java Producer Example
@@ -337,31 +354,41 @@ Define beans for queue, exchange, and binding.
 
 ```java
 import org.springframework.amqp.core.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String QUEUE = "my-queue";
-    public static final String EXCHANGE = "my-exchange";
-    public static final String ROUTING_KEY = "my-routing-key";
+    @Value("${rabbitmq.exchange.name}")
+    private String exchangeName;
+
+    @Value("${rabbitmq.queue.name}")
+    private String queueName;
+
+    @Value("${rabbitmq.routing-key}")
+    private String routingKey;
 
     @Bean
     public Queue queue() {
-        return new Queue(QUEUE, true); // durable queue
+        return new Queue(queueName, true); // durable queue
     }
 
     @Bean
     public DirectExchange exchange() {
-        return new DirectExchange(EXCHANGE);
+        return new DirectExchange(exchangeName);
     }
 
     @Bean
     public Binding binding(Queue queue, DirectExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+        return BindingBuilder
+                .bind(queue)
+                .to(exchange)
+                .with(routingKey);
     }
 }
+
 ```
 > ℹ️ **Tip:**  
 > - For a topic exchange: `new TopicExchange(EXCHANGE)`
