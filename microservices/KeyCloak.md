@@ -107,15 +107,12 @@ Here's a complete, **beginner-friendly guide** to installing and running **Keycl
 
 ## 🔧 Step-by-Step Installation
 
-### 📦 Step 1: **Pull Keycloak Docker Image**
-
-Open your terminal and run:
-
+### 📦 Step 1: **start Keycloak Docker Image**
 ```bash
-docker pull quay.io/keycloak/keycloak:26.1.1
+docker run -p 127.0.0.1:8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.3.2 start-dev
 ```
 
-> ✅ Replace `26.1.1` with the latest stable version if needed.
+> ✅ Replace `26.3.2` with the latest stable version if needed.
 
 ---
 
