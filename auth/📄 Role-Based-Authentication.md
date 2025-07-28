@@ -55,6 +55,7 @@ Role-Based Authentication (or Authorization) means users are assigned roles, and
 
 ### ✅ Step 1: Define Users with Roles (In-Memory)
 
+```
 @Bean
 public UserDetailsService userDetailsService() {
     UserDetails user = User.withUsername("user")
@@ -69,7 +70,7 @@ public UserDetailsService userDetailsService() {
 
     return new InMemoryUserDetailsManager(user, admin);
 }
-
+```
 
 ### ✅ Step 2: Configure URL Access Based on Roles
 @Bean
